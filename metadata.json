@@ -1,6 +1,14 @@
-{
-  "name": "Generador de Plan Customer Centric Taike 5E",
-  "description": "Herramienta de consultoría basada en IA para desarrollar roadmaps personalizados de experiencia de cliente utilizando el modelo 5E.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Fortress Catch-all Default-Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Direct database access is blocked since we proxy all audits through our secure Node.js API
+    match /audits/{auditId} {
+      allow read, write: if false;
+    }
+  }
 }

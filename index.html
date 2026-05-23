@@ -1,13 +1,38 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Modelo Taiken 5E | Strategic Customer Cetric</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="./src/main.tsx"></script>
-  </body>
-</html>
-
+{
+  "entities": {
+    "audit": {
+      "title": "Audit",
+      "description": "Un diagnóstico registrado por un usuario en el sistema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "values": {
+          "type": "object"
+        },
+        "scores": {
+          "type": "array"
+        },
+        "resultMarkdown": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "timestamp",
+        "values",
+        "scores"
+      ]
+    }
+  },
+  "firestore": {
+    "/audits/{auditId}": {
+      "schema": "audit",
+      "description": "Colección centralizada de diagnósticos / auditorías de todos los usuarios"
+    }
+  }
+}

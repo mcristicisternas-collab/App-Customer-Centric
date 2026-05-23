@@ -1,0 +1,109 @@
+import {clsx, type ClassValue} from 'clsx';
+import {twMerge} from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export interface AxisScore {
+  key: string;
+  name: string;
+  ratingValue: number; // 1 to 5 (e.g. 4.2)
+  ratingLabel: string; // e.g. "Muy bajo"
+  score: number;      // 0 to 100
+}
+
+export function compute5EScores(values: Record<string, any>): AxisScore[] {
+  const axes = [
+    { 
+      id: 'score_enfocar', 
+      name: 'Enfocar',
+      subKeys: ['enfocar_1', 'enfocar_2', 'enfocar_3', 'enfocar_4', 'enfocar_5']
+    },
+    { 
+      id: 'score_escuchar', 
+      name: 'Escuchar',
+      subKeys: ['escuchar_1', 'escuchar_2', 'escuchar_3', 'escuchar_4', 'escuchar_5', 'escuchar_6']
+    },
+    { 
+      id: 'score_empoderar', 
+      name: 'Empoderar',
+      subKeys: ['empoderar_1', 'empoderar_2', 'empoderar_3', 'empoderar_4', 'empoderar_5']
+    },
+    { 
+      id: 'score_encarnar', 
+      name: 'Encarnar',
+      subKeys: ['encarnar_1', 'encarnar_2', 'encarnar_3', 'encarnar_4', 'encarnar_5']
+    },
+    { 
+      id: 'score_escalar', 
+      name: 'Escalar',
+      subKeys: ['escalar_1', 'escalar_2', 'escalar_3', 'escalar_4']
+    },
+  ];
+
+  const labels: Record<number, string> = {
+    1: 'Muy bajo',
+    2: 'Bajo',
+    3: 'Medio',
+    4: 'Alto',
+    5: 'Muy alto'
+  };
+
+  const getLikertValue = (rawVal: any): number | null => {
+    if (rawVal === undefined || rawVal === null) return null;
+    if (typeof rawVal === 'number') {
+      return rawVal;
+    }
+    const match = String(rawVal).match(/^(\d)/);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+    const parsed = parseInt(String(rawVal), 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 5) {
+      return parsed;
+    }
+    return null;
+  };
+
+  return axes.map(axis => {
+    // 1. Check for legacy/direct single key first
+    const legacyVal = getLikertValue(values[axis.id]);
+    
+    let avgLikert = 3.0;
+    
+    if (legacyVal !== null) {
+      avgLikert = legacyVal;
+    } else {
+      // 2. Otherwise calculate mean of answered sub-questions
+      const answeredRatings: number[] = [];
+      axis.subKeys.forEach(k => {
+        const subVal = getLikertValue(values[k]);
+        if (subVal !== null) {
+          answeredRatings.push(subVal);
+        }
+      });
+      
+      if (answeredRatings.length > 0) {
+        const sum = answeredRatings.reduce((a, b) => a + b, 0);
+        avgLikert = sum / answeredRatings.length;
+      } else {
+        // If nothing has been answered yet, default to median/neutral rating
+        avgLikert = 3.0;
+      }
+    }
+
+    // Precise score percentage mapping
+    const score = Math.round(((avgLikert - 1) / 4) * 100);
+    const roundedInt = Math.round(avgLikert);
+    const finalRatingValue = Math.round(avgLikert * 10) / 10; // Rounded to 1 decimal, e.g. 4.2
+
+    return {
+      key: axis.id,
+      name: axis.name,
+      ratingValue: finalRatingValue,
+      ratingLabel: labels[roundedInt] || 'Medio',
+      score: score
+    };
+  });
+}
